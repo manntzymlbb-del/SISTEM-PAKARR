@@ -1,0 +1,31 @@
+fetch("save_diagnosis.php", {
+    method: "POST",
+    headers: {
+        "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+
+        patient_name: patientName,
+        patient_age: patientAge,
+        patient_gender: patientGender,
+
+        disease: diseaseName,
+        score: finalScore,
+        level_name: anxietyLevel,
+
+        answers: answers,
+        recommendations: recommendations,
+        evidence: evidence
+
+    })
+})
+.then(res => res.json())
+.then(data => {
+
+    if(data.success){
+        console.log("Berhasil disimpan");
+    }else{
+        console.log(data.message);
+    }
+
+});
