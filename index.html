@@ -15,7 +15,7 @@
       <nav class="navbar">
         <a href="#home" class="brand">Pakar Anxiety</a>
         <div class="nav-links">
-          <a href="#about">Kenapa Kami</a>
+          <a href="#about">Tentang</a>
           <a href="#diagnosis">Diagnosa</a>
           <a href="#knowledge">Basis Pengetahuan</a>
           <a href="#statistics">Statistik</a>
@@ -39,9 +39,9 @@
           <h3>Fitur Unggulan</h3>
           <ul>
             <li>Form gejala interaktif</li>
-            <li>Penilaian keyakinan berbasis certainty factor</li>
+            <li>Penilaian keyakinan berbasis Certainty Factor (CF)</li>
             <li>Penjelasan hasil dan rekomendasi awal</li>
-            <li>Riwayat, statistik, dan unduh hasil</li>
+            <li>Riwayat, statistik, dan integrasi MySQL database</li>
           </ul>
         </div>
       </section>
@@ -59,8 +59,8 @@
             <p>Menggunakan forward chaining dan certainty factor berdasarkan basis pengetahuan pakar psikologi untuk menghasilkan hasil yang lebih terukur.</p>
           </article>
           <article class="info-card">
-            <h3>Aman & Rahasia</h3>
-            <p>Data yang Anda masukkan hanya tersimpan lokal di browser Anda, sehingga privasi tetap terjaga.</p>
+            <h3>Aman & Terintegrasi</h3>
+            <p>Data tersimpan dengan rapi pada database server MySQL Anda melalui koneksi REST API yang aman.</p>
           </article>
           <article class="info-card">
             <h3>Cepat & Mudah</h3>
@@ -73,15 +73,16 @@
         <div class="section-heading">
           <p class="eyebrow">Diagnosa</p>
           <h2>Jawab pertanyaan berikut untuk mendeteksi potensi anxiety secara lebih akurat</h2>
-          <p class="section-subtitle">Pilih jawaban yang paling sesuai dengan kondisi Anda dalam 2 minggu terakhir.</p>
+          <p class="section-subtitle">Pilih tingkat keyakinan yang paling sesuai dengan kondisi Anda dalam 2 minggu terakhir.</p>
         </div>
         <div class="diagnosis-layout">
-          <form id="diagnosisForm" class="diagnosis-card">
+          <!-- PERBAIKAN 1: Menambahkan atribut novalidate agar tidak terjadi error "invalid form control is not focusable" -->
+          <form id="diagnosisForm" class="diagnosis-card" novalidate>
             <div class="consultation-intro">
               <div class="consultation-badges">
                 <span>⏱ 25 pertanyaan</span>
                 <span>🧠 Berdasarkan gejala anxiety remaja</span>
-                <span>🔒 Hasil disimpan lokal</span>
+                <span>🔒 Hasil tersimpan otomatis ke database</span>
               </div>
               <p>Jawablah pertanyaan berikut sesuai dengan apa yang Anda rasakan akhir-akhir ini. Data Anda dirahasiakan.</p>
             </div>
@@ -103,375 +104,381 @@
               </div>
             </div>
 
+            <!-- LANGKAH 1: IDENTITAS PASIEN -->
             <div class="wizard-step active" data-step="0">
               <div class="identity-card">
                 <h3>Data Diri Pasien</h3>
                 <p class="section-subtitle">Informasi ini digunakan untuk pencatatan hasil evaluasi.</p>
                 <label>
                   Nama Lengkap atau Inisial
-                  <input type="text" id="patientName" placeholder="Contoh: Adit / Siti" required />
+                  <input type="text" id="patientName" name="patientName" placeholder="Contoh: Adit / Siti" required />
                 </label>
                 <label>
                   Usia (tahun)
-                  <input type="number" id="patientAge" min="12" max="20" placeholder="Contoh: 16" required />
+                  <!-- PERBAIKAN 2: Menambahkan atribut name="patientAge" -->
+                  <input type="number" id="patientAge" name="patientAge" min="12" max="20" placeholder="Contoh: 16" required />
                 </label>
                 <label>
                   Jenis Kelamin
-                  <select id="patientGender">
+                  <select id="patientGender" name="patientGender" required>
                     <option value="">Pilih jenis kelamin</option>
                     <option value="Laki-laki">Laki-laki</option>
                     <option value="Perempuan">Perempuan</option>
-                    <option value="Lainnya">Lainnya</option>
                   </select>
                 </label>
               </div>
               <p class="section-subtitle">Langkah berikutnya akan memuat pertanyaan gejala fisik.</p>
             </div>
 
+            <!-- LANGKAH 2: GEJALA FISIK (G01 - G09) -->
             <div class="wizard-step" data-step="1">
               <div class="form-group">
                 <div class="question-section">
                   <div class="step-header">
-                    <h4>Bagian 1: Fisik</h4>
-                    <p>Seberapa sering/yakin Anda merasakan gejala-gejala berikut?</p>
+                    <h4>Bagian 1: Gejala Fisik</h4>
+                    <p>Seberapa yakin Anda merasakan gejala-gejala berikut?</p>
                   </div>
 
                   <div class="question-card">
-                    <p>1. Jantung berdetak cepat atau berdebar.</p>
+                    <p>1. [G01] Jantung berdetak cepat atau berdebar.</p>
                     <div class="scale">
-                      <label><input type="radio" name="q1" value="0" checked /> Tidak</label>
-                      <label><input type="radio" name="q1" value="1" /> Sangat Tidak Yakin</label>
-                      <label><input type="radio" name="q1" value="2" /> Tidak Yakin</label>
-                      <label><input type="radio" name="q1" value="3" /> Yakin</label>
-                      <label><input type="radio" name="q1" value="4" /> Sangat Yakin</label>
-                      <label><input type="radio" name="q1" value="5" /> Pasti</label>
+                      <label><input type="radio" name="q1" value="0" checked /> Tidak (0)</label>
+                      <label><input type="radio" name="q1" value="1" /> Sangat Tidak Yakin (0.2)</label>
+                      <label><input type="radio" name="q1" value="2" /> Tidak Yakin (0.4)</label>
+                      <label><input type="radio" name="q1" value="3" /> Yakin (0.6)</label>
+                      <label><input type="radio" name="q1" value="4" /> Sangat Yakin (0.8)</label>
+                      <label><input type="radio" name="q1" value="5" /> Pasti (1.0)</label>
                     </div>
                   </div>
 
                   <div class="question-card">
-                    <p>2. Keringat berlebih.</p>
+                    <p>2. [G02] Keringat berlebih.</p>
                     <div class="scale">
-                      <label><input type="radio" name="q2" value="0" checked /> Tidak</label>
-                      <label><input type="radio" name="q2" value="1" /> Sangat Tidak Yakin</label>
-                      <label><input type="radio" name="q2" value="2" /> Tidak Yakin</label>
-                      <label><input type="radio" name="q2" value="3" /> Yakin</label>
-                      <label><input type="radio" name="q2" value="4" /> Sangat Yakin</label>
-                      <label><input type="radio" name="q2" value="5" /> Pasti</label>
+                      <label><input type="radio" name="q2" value="0" checked /> Tidak (0)</label>
+                      <label><input type="radio" name="q2" value="1" /> Sangat Tidak Yakin (0.2)</label>
+                      <label><input type="radio" name="q2" value="2" /> Tidak Yakin (0.4)</label>
+                      <label><input type="radio" name="q2" value="3" /> Yakin (0.6)</label>
+                      <label><input type="radio" name="q2" value="4" /> Sangat Yakin (0.8)</label>
+                      <label><input type="radio" name="q2" value="5" /> Pasti (1.0)</label>
                     </div>
                   </div>
 
                   <div class="question-card">
-                    <p>3. Gemetar atau tremor.</p>
+                    <p>3. [G03] Gemetar atau tremor.</p>
                     <div class="scale">
-                      <label><input type="radio" name="q3" value="0" checked /> Tidak</label>
-                      <label><input type="radio" name="q3" value="1" /> Sangat Tidak Yakin</label>
-                      <label><input type="radio" name="q3" value="2" /> Tidak Yakin</label>
-                      <label><input type="radio" name="q3" value="3" /> Yakin</label>
-                      <label><input type="radio" name="q3" value="4" /> Sangat Yakin</label>
-                      <label><input type="radio" name="q3" value="5" /> Pasti</label>
+                      <label><input type="radio" name="q3" value="0" checked /> Tidak (0)</label>
+                      <label><input type="radio" name="q3" value="1" /> Sangat Tidak Yakin (0.2)</label>
+                      <label><input type="radio" name="q3" value="2" /> Tidak Yakin (0.4)</label>
+                      <label><input type="radio" name="q3" value="3" /> Yakin (0.6)</label>
+                      <label><input type="radio" name="q3" value="4" /> Sangat Yakin (0.8)</label>
+                      <label><input type="radio" name="q3" value="5" /> Pasti (1.0)</label>
                     </div>
                   </div>
 
                   <div class="question-card">
-                    <p>4. Sesak napas.</p>
+                    <p>4. [G04] Sesak napas.</p>
                     <div class="scale">
-                      <label><input type="radio" name="q4" value="0" checked /> Tidak</label>
-                      <label><input type="radio" name="q4" value="1" /> Sangat Tidak Yakin</label>
-                      <label><input type="radio" name="q4" value="2" /> Tidak Yakin</label>
-                      <label><input type="radio" name="q4" value="3" /> Yakin</label>
-                      <label><input type="radio" name="q4" value="4" /> Sangat Yakin</label>
-                      <label><input type="radio" name="q4" value="5" /> Pasti</label>
+                      <label><input type="radio" name="q4" value="0" checked /> Tidak (0)</label>
+                      <label><input type="radio" name="q4" value="1" /> Sangat Tidak Yakin (0.2)</label>
+                      <label><input type="radio" name="q4" value="2" /> Tidak Yakin (0.4)</label>
+                      <label><input type="radio" name="q4" value="3" /> Yakin (0.6)</label>
+                      <label><input type="radio" name="q4" value="4" /> Sangat Yakin (0.8)</label>
+                      <label><input type="radio" name="q4" value="5" /> Pasti (1.0)</label>
                     </div>
                   </div>
 
                   <div class="question-card">
-                    <p>5. Pusing atau sakit kepala.</p>
+                    <p>5. [G05] Pusing atau sakit kepala.</p>
                     <div class="scale">
-                      <label><input type="radio" name="q5" value="0" checked /> Tidak</label>
-                      <label><input type="radio" name="q5" value="1" /> Sangat Tidak Yakin</label>
-                      <label><input type="radio" name="q5" value="2" /> Tidak Yakin</label>
-                      <label><input type="radio" name="q5" value="3" /> Yakin</label>
-                      <label><input type="radio" name="q5" value="4" /> Sangat Yakin</label>
-                      <label><input type="radio" name="q5" value="5" /> Pasti</label>
+                      <label><input type="radio" name="q5" value="0" checked /> Tidak (0)</label>
+                      <label><input type="radio" name="q5" value="1" /> Sangat Tidak Yakin (0.2)</label>
+                      <label><input type="radio" name="q5" value="2" /> Tidak Yakin (0.4)</label>
+                      <label><input type="radio" name="q5" value="3" /> Yakin (0.6)</label>
+                      <label><input type="radio" name="q5" value="4" /> Sangat Yakin (0.8)</label>
+                      <label><input type="radio" name="q5" value="5" /> Pasti (1.0)</label>
                     </div>
                   </div>
 
                   <div class="question-card">
-                    <p>6. Mual atau gangguan perut.</p>
+                    <p>6. [G06] Mual atau gangguan perut.</p>
                     <div class="scale">
-                      <label><input type="radio" name="q6" value="0" checked /> Tidak</label>
-                      <label><input type="radio" name="q6" value="1" /> Sangat Tidak Yakin</label>
-                      <label><input type="radio" name="q6" value="2" /> Tidak Yakin</label>
-                      <label><input type="radio" name="q6" value="3" /> Yakin</label>
-                      <label><input type="radio" name="q6" value="4" /> Sangat Yakin</label>
-                      <label><input type="radio" name="q6" value="5" /> Pasti</label>
+                      <label><input type="radio" name="q6" value="0" checked /> Tidak (0)</label>
+                      <label><input type="radio" name="q6" value="1" /> Sangat Tidak Yakin (0.2)</label>
+                      <label><input type="radio" name="q6" value="2" /> Tidak Yakin (0.4)</label>
+                      <label><input type="radio" name="q6" value="3" /> Yakin (0.6)</label>
+                      <label><input type="radio" name="q6" value="4" /> Sangat Yakin (0.8)</label>
+                      <label><input type="radio" name="q6" value="5" /> Pasti (1.0)</label>
                     </div>
                   </div>
 
                   <div class="question-card">
-                    <p>7. Otot tegang atau kaku.</p>
+                    <p>7. [G07] Otot tegang atau kaku.</p>
                     <div class="scale">
-                      <label><input type="radio" name="q7" value="0" checked /> Tidak</label>
-                      <label><input type="radio" name="q7" value="1" /> Sangat Tidak Yakin</label>
-                      <label><input type="radio" name="q7" value="2" /> Tidak Yakin</label>
-                      <label><input type="radio" name="q7" value="3" /> Yakin</label>
-                      <label><input type="radio" name="q7" value="4" /> Sangat Yakin</label>
-                      <label><input type="radio" name="q7" value="5" /> Pasti</label>
+                      <label><input type="radio" name="q7" value="0" checked /> Tidak (0)</label>
+                      <label><input type="radio" name="q7" value="1" /> Sangat Tidak Yakin (0.2)</label>
+                      <label><input type="radio" name="q7" value="2" /> Tidak Yakin (0.4)</label>
+                      <label><input type="radio" name="q7" value="3" /> Yakin (0.6)</label>
+                      <label><input type="radio" name="q7" value="4" /> Sangat Yakin (0.8)</label>
+                      <label><input type="radio" name="q7" value="5" /> Pasti (1.0)</label>
                     </div>
                   </div>
 
                   <div class="question-card">
-                    <p>8. Kelelahan berlebih.</p>
+                    <p>8. [G08] Kelelahan berlebih.</p>
                     <div class="scale">
-                      <label><input type="radio" name="q8" value="0" checked /> Tidak</label>
-                      <label><input type="radio" name="q8" value="1" /> Sangat Tidak Yakin</label>
-                      <label><input type="radio" name="q8" value="2" /> Tidak Yakin</label>
-                      <label><input type="radio" name="q8" value="3" /> Yakin</label>
-                      <label><input type="radio" name="q8" value="4" /> Sangat Yakin</label>
-                      <label><input type="radio" name="q8" value="5" /> Pasti</label>
+                      <label><input type="radio" name="q8" value="0" checked /> Tidak (0)</label>
+                      <label><input type="radio" name="q8" value="1" /> Sangat Tidak Yakin (0.2)</label>
+                      <label><input type="radio" name="q8" value="2" /> Tidak Yakin (0.4)</label>
+                      <label><input type="radio" name="q8" value="3" /> Yakin (0.6)</label>
+                      <label><input type="radio" name="q8" value="4" /> Sangat Yakin (0.8)</label>
+                      <label><input type="radio" name="q8" value="5" /> Pasti (1.0)</label>
                     </div>
                   </div>
 
                   <div class="question-card">
-                    <p>9. Sulit tidur (insomnia).</p>
+                    <p>9. [G09] Sulit tidur (insomnia).</p>
                     <div class="scale">
-                      <label><input type="radio" name="q9" value="0" checked /> Tidak</label>
-                      <label><input type="radio" name="q9" value="1" /> Sangat Tidak Yakin</label>
-                      <label><input type="radio" name="q9" value="2" /> Tidak Yakin</label>
-                      <label><input type="radio" name="q9" value="3" /> Yakin</label>
-                      <label><input type="radio" name="q9" value="4" /> Sangat Yakin</label>
-                      <label><input type="radio" name="q9" value="5" /> Pasti</label>
+                      <label><input type="radio" name="q9" value="0" checked /> Tidak (0)</label>
+                      <label><input type="radio" name="q9" value="1" /> Sangat Tidak Yakin (0.2)</label>
+                      <label><input type="radio" name="q9" value="2" /> Tidak Yakin (0.4)</label>
+                      <label><input type="radio" name="q9" value="3" /> Yakin (0.6)</label>
+                      <label><input type="radio" name="q9" value="4" /> Sangat Yakin (0.8)</label>
+                      <label><input type="radio" name="q9" value="5" /> Pasti (1.0)</label>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
 
+            <!-- LANGKAH 3: GEJALA KOGNITIF (G10 - G16) -->
             <div class="wizard-step" data-step="2">
               <div class="form-group">
                 <div class="question-section">
                   <div class="step-header">
-                    <h4>Bagian 2: Kognitif</h4>
-                    <p>Seberapa sering/yakin Anda merasakan gejala-gejala berikut?</p>
+                    <h4>Bagian 2: Gejala Kognitif</h4>
+                    <p>Seberapa yakin Anda merasakan gejala-gejala berikut?</p>
                   </div>
 
                   <div class="question-card">
-                    <p>10. Khawatir berlebihan tentang berbagai hal.</p>
+                    <p>10. [G10] Khawatir berlebihan tentang berbagai hal.</p>
                     <div class="scale">
-                      <label><input type="radio" name="q10" value="0" checked /> Tidak</label>
-                      <label><input type="radio" name="q10" value="1" /> Sangat Tidak Yakin</label>
-                      <label><input type="radio" name="q10" value="2" /> Tidak Yakin</label>
-                      <label><input type="radio" name="q10" value="3" /> Yakin</label>
-                      <label><input type="radio" name="q10" value="4" /> Sangat Yakin</label>
-                      <label><input type="radio" name="q10" value="5" /> Pasti</label>
+                      <label><input type="radio" name="q10" value="0" checked /> Tidak (0)</label>
+                      <label><input type="radio" name="q10" value="1" /> Sangat Tidak Yakin (0.2)</label>
+                      <label><input type="radio" name="q10" value="2" /> Tidak Yakin (0.4)</label>
+                      <label><input type="radio" name="q10" value="3" /> Yakin (0.6)</label>
+                      <label><input type="radio" name="q10" value="4" /> Sangat Yakin (0.8)</label>
+                      <label><input type="radio" name="q10" value="5" /> Pasti (1.0)</label>
                     </div>
                   </div>
 
                   <div class="question-card">
-                    <p>11. Sulit berkonsentrasi atau pikiran kosong.</p>
+                    <p>11. [G11] Sulit berkonsentrasi atau pikiran kosong.</p>
                     <div class="scale">
-                      <label><input type="radio" name="q11" value="0" checked /> Tidak</label>
-                      <label><input type="radio" name="q11" value="1" /> Sangat Tidak Yakin</label>
-                      <label><input type="radio" name="q11" value="2" /> Tidak Yakin</label>
-                      <label><input type="radio" name="q11" value="3" /> Yakin</label>
-                      <label><input type="radio" name="q11" value="4" /> Sangat Yakin</label>
-                      <label><input type="radio" name="q11" value="5" /> Pasti</label>
+                      <label><input type="radio" name="q11" value="0" checked /> Tidak (0)</label>
+                      <label><input type="radio" name="q11" value="1" /> Sangat Tidak Yakin (0.2)</label>
+                      <label><input type="radio" name="q11" value="2" /> Tidak Yakin (0.4)</label>
+                      <label><input type="radio" name="q11" value="3" /> Yakin (0.6)</label>
+                      <label><input type="radio" name="q11" value="4" /> Sangat Yakin (0.8)</label>
+                      <label><input type="radio" name="q11" value="5" /> Pasti (1.0)</label>
                     </div>
                   </div>
 
                   <div class="question-card">
-                    <p>12. Pikiran negatif terus-menerus.</p>
+                    <p>12. [G12] Pikiran negatif terus-menerus.</p>
                     <div class="scale">
-                      <label><input type="radio" name="q12" value="0" checked /> Tidak</label>
-                      <label><input type="radio" name="q12" value="1" /> Sangat Tidak Yakin</label>
-                      <label><input type="radio" name="q12" value="2" /> Tidak Yakin</label>
-                      <label><input type="radio" name="q12" value="3" /> Yakin</label>
-                      <label><input type="radio" name="q12" value="4" /> Sangat Yakin</label>
-                      <label><input type="radio" name="q12" value="5" /> Pasti</label>
+                      <label><input type="radio" name="q12" value="0" checked /> Tidak (0)</label>
+                      <label><input type="radio" name="q12" value="1" /> Sangat Tidak Yakin (0.2)</label>
+                      <label><input type="radio" name="q12" value="2" /> Tidak Yakin (0.4)</label>
+                      <label><input type="radio" name="q12" value="3" /> Yakin (0.6)</label>
+                      <label><input type="radio" name="q12" value="4" /> Sangat Yakin (0.8)</label>
+                      <label><input type="radio" name="q12" value="5" /> Pasti (1.0)</label>
                     </div>
                   </div>
 
                   <div class="question-card">
-                    <p>13. Takut dinilai negatif oleh orang lain.</p>
+                    <p>13. [G13] Takut dinilai negatif oleh orang lain.</p>
                     <div class="scale">
-                      <label><input type="radio" name="q13" value="0" checked /> Tidak</label>
-                      <label><input type="radio" name="q13" value="1" /> Sangat Tidak Yakin</label>
-                      <label><input type="radio" name="q13" value="2" /> Tidak Yakin</label>
-                      <label><input type="radio" name="q13" value="3" /> Yakin</label>
-                      <label><input type="radio" name="q13" value="4" /> Sangat Yakin</label>
-                      <label><input type="radio" name="q13" value="5" /> Pasti</label>
+                      <label><input type="radio" name="q13" value="0" checked /> Tidak (0)</label>
+                      <label><input type="radio" name="q13" value="1" /> Sangat Tidak Yakin (0.2)</label>
+                      <label><input type="radio" name="q13" value="2" /> Tidak Yakin (0.4)</label>
+                      <label><input type="radio" name="q13" value="3" /> Yakin (0.6)</label>
+                      <label><input type="radio" name="q13" value="4" /> Sangat Yakin (0.8)</label>
+                      <label><input type="radio" name="q13" value="5" /> Pasti (1.0)</label>
                     </div>
                   </div>
 
                   <div class="question-card">
-                    <p>14. Takut memalukan diri sendiri di depan umum.</p>
+                    <p>14. [G14] Takut memalukan diri sendiri di depan umum.</p>
                     <div class="scale">
-                      <label><input type="radio" name="q14" value="0" checked /> Tidak</label>
-                      <label><input type="radio" name="q14" value="1" /> Sangat Tidak Yakin</label>
-                      <label><input type="radio" name="q14" value="2" /> Tidak Yakin</label>
-                      <label><input type="radio" name="q14" value="3" /> Yakin</label>
-                      <label><input type="radio" name="q14" value="4" /> Sangat Yakin</label>
-                      <label><input type="radio" name="q14" value="5" /> Pasti</label>
+                      <label><input type="radio" name="q14" value="0" checked /> Tidak (0)</label>
+                      <label><input type="radio" name="q14" value="1" /> Sangat Tidak Yakin (0.2)</label>
+                      <label><input type="radio" name="q14" value="2" /> Tidak Yakin (0.4)</label>
+                      <label><input type="radio" name="q14" value="3" /> Yakin (0.6)</label>
+                      <label><input type="radio" name="q14" value="4" /> Sangat Yakin (0.8)</label>
+                      <label><input type="radio" name="q14" value="5" /> Pasti (1.0)</label>
                     </div>
                   </div>
 
                   <div class="question-card">
-                    <p>15. Pikiran tentang bencana atau malapetaka.</p>
+                    <p>15. [G15] Pikiran tentang bencana atau malapetaka.</p>
                     <div class="scale">
-                      <label><input type="radio" name="q15" value="0" checked /> Tidak</label>
-                      <label><input type="radio" name="q15" value="1" /> Sangat Tidak Yakin</label>
-                      <label><input type="radio" name="q15" value="2" /> Tidak Yakin</label>
-                      <label><input type="radio" name="q15" value="3" /> Yakin</label>
-                      <label><input type="radio" name="q15" value="4" /> Sangat Yakin</label>
-                      <label><input type="radio" name="q15" value="5" /> Pasti</label>
+                      <label><input type="radio" name="q15" value="0" checked /> Tidak (0)</label>
+                      <label><input type="radio" name="q15" value="1" /> Sangat Tidak Yakin (0.2)</label>
+                      <label><input type="radio" name="q15" value="2" /> Tidak Yakin (0.4)</label>
+                      <label><input type="radio" name="q15" value="3" /> Yakin (0.6)</label>
+                      <label><input type="radio" name="q15" value="4" /> Sangat Yakin (0.8)</label>
+                      <label><input type="radio" name="q15" value="5" /> Pasti (1.0)</label>
                     </div>
                   </div>
 
                   <div class="question-card">
-                    <p>16. Perasaan tidak nyata atau terpisah dari lingkungan.</p>
+                    <p>16. [G16] Perasaan tidak nyata atau terpisah dari lingkungan.</p>
                     <div class="scale">
-                      <label><input type="radio" name="q16" value="0" checked /> Tidak</label>
-                      <label><input type="radio" name="q16" value="1" /> Sangat Tidak Yakin</label>
-                      <label><input type="radio" name="q16" value="2" /> Tidak Yakin</label>
-                      <label><input type="radio" name="q16" value="3" /> Yakin</label>
-                      <label><input type="radio" name="q16" value="4" /> Sangat Yakin</label>
-                      <label><input type="radio" name="q16" value="5" /> Pasti</label>
+                      <label><input type="radio" name="q16" value="0" checked /> Tidak (0)</label>
+                      <label><input type="radio" name="q16" value="1" /> Sangat Tidak Yakin (0.2)</label>
+                      <label><input type="radio" name="q16" value="2" /> Tidak Yakin (0.4)</label>
+                      <label><input type="radio" name="q16" value="3" /> Yakin (0.6)</label>
+                      <label><input type="radio" name="q16" value="4" /> Sangat Yakin (0.8)</label>
+                      <label><input type="radio" name="q16" value="5" /> Pasti (1.0)</label>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
 
+            <!-- LANGKAH 4: GEJALA EMOSIONAL (G17 - G20) -->
             <div class="wizard-step" data-step="3">
               <div class="form-group">
                 <div class="question-section">
                   <div class="step-header">
-                    <h4>Bagian 3: Emosional</h4>
-                    <p>Seberapa sering/yakin Anda merasakan gejala-gejala berikut?</p>
+                    <h4>Bagian 3: Gejala Emosional</h4>
+                    <p>Seberapa yakin Anda merasakan gejala-gejala berikut?</p>
                   </div>
 
                   <div class="question-card">
-                    <p>17. Mudah marah atau sangat sensitif.</p>
+                    <p>17. [G17] Mudah marah atau sangat sensitif.</p>
                     <div class="scale">
-                      <label><input type="radio" name="q17" value="0" checked /> Tidak</label>
-                      <label><input type="radio" name="q17" value="1" /> Sangat Tidak Yakin</label>
-                      <label><input type="radio" name="q17" value="2" /> Tidak Yakin</label>
-                      <label><input type="radio" name="q17" value="3" /> Yakin</label>
-                      <label><input type="radio" name="q17" value="4" /> Sangat Yakin</label>
-                      <label><input type="radio" name="q17" value="5" /> Pasti</label>
+                      <label><input type="radio" name="q17" value="0" checked /> Tidak (0)</label>
+                      <label><input type="radio" name="q17" value="1" /> Sangat Tidak Yakin (0.2)</label>
+                      <label><input type="radio" name="q17" value="2" /> Tidak Yakin (0.4)</label>
+                      <label><input type="radio" name="q17" value="3" /> Yakin (0.6)</label>
+                      <label><input type="radio" name="q17" value="4" /> Sangat Yakin (0.8)</label>
+                      <label><input type="radio" name="q17" value="5" /> Pasti (1.0)</label>
                     </div>
                   </div>
 
                   <div class="question-card">
-                    <p>18. Perasaan cemas yang intens secara tiba-tiba.</p>
+                    <p>18. [G18] Perasaan cemas yang intens secara tiba-tiba.</p>
                     <div class="scale">
-                      <label><input type="radio" name="q18" value="0" checked /> Tidak</label>
-                      <label><input type="radio" name="q18" value="1" /> Sangat Tidak Yakin</label>
-                      <label><input type="radio" name="q18" value="2" /> Tidak Yakin</label>
-                      <label><input type="radio" name="q18" value="3" /> Yakin</label>
-                      <label><input type="radio" name="q18" value="4" /> Sangat Yakin</label>
-                      <label><input type="radio" name="q18" value="5" /> Pasti</label>
+                      <label><input type="radio" name="q18" value="0" checked /> Tidak (0)</label>
+                      <label><input type="radio" name="q18" value="1" /> Sangat Tidak Yakin (0.2)</label>
+                      <label><input type="radio" name="q18" value="2" /> Tidak Yakin (0.4)</label>
+                      <label><input type="radio" name="q18" value="3" /> Yakin (0.6)</label>
+                      <label><input type="radio" name="q18" value="4" /> Sangat Yakin (0.8)</label>
+                      <label><input type="radio" name="q18" value="5" /> Pasti (1.0)</label>
                     </div>
                   </div>
 
                   <div class="question-card">
-                    <p>19. Takut kehilangan kendali.</p>
+                    <p>19. [G19] Takut kehilangan kendali.</p>
                     <div class="scale">
-                      <label><input type="radio" name="q19" value="0" checked /> Tidak</label>
-                      <label><input type="radio" name="q19" value="1" /> Sangat Tidak Yakin</label>
-                      <label><input type="radio" name="q19" value="2" /> Tidak Yakin</label>
-                      <label><input type="radio" name="q19" value="3" /> Yakin</label>
-                      <label><input type="radio" name="q19" value="4" /> Sangat Yakin</label>
-                      <label><input type="radio" name="q19" value="5" /> Pasti</label>
+                      <label><input type="radio" name="q19" value="0" checked /> Tidak (0)</label>
+                      <label><input type="radio" name="q19" value="1" /> Sangat Tidak Yakin (0.2)</label>
+                      <label><input type="radio" name="q19" value="2" /> Tidak Yakin (0.4)</label>
+                      <label><input type="radio" name="q19" value="3" /> Yakin (0.6)</label>
+                      <label><input type="radio" name="q19" value="4" /> Sangat Yakin (0.8)</label>
+                      <label><input type="radio" name="q19" value="5" /> Pasti (1.0)</label>
                     </div>
                   </div>
 
                   <div class="question-card">
-                    <p>20. Takut mati mendadak.</p>
+                    <p>20. [G20] Takut mati mendadak.</p>
                     <div class="scale">
-                      <label><input type="radio" name="q20" value="0" checked /> Tidak</label>
-                      <label><input type="radio" name="q20" value="1" /> Sangat Tidak Yakin</label>
-                      <label><input type="radio" name="q20" value="2" /> Tidak Yakin</label>
-                      <label><input type="radio" name="q20" value="3" /> Yakin</label>
-                      <label><input type="radio" name="q20" value="4" /> Sangat Yakin</label>
-                      <label><input type="radio" name="q20" value="5" /> Pasti</label>
+                      <label><input type="radio" name="q20" value="0" checked /> Tidak (0)</label>
+                      <label><input type="radio" name="q20" value="1" /> Sangat Tidak Yakin (0.2)</label>
+                      <label><input type="radio" name="q20" value="2" /> Tidak Yakin (0.4)</label>
+                      <label><input type="radio" name="q20" value="3" /> Yakin (0.6)</label>
+                      <label><input type="radio" name="q20" value="4" /> Sangat Yakin (0.8)</label>
+                      <label><input type="radio" name="q20" value="5" /> Pasti (1.0)</label>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
 
+            <!-- LANGKAH 5: GEJALA PERILAKU (G21 - G25) -->
             <div class="wizard-step" data-step="4">
               <div class="form-group">
                 <div class="question-section">
                   <div class="step-header">
-                    <h4>Bagian 4: Perilaku</h4>
-                    <p>Seberapa sering/yakin Anda merasakan gejala-gejala berikut?</p>
+                    <h4>Bagian 4: Gejala Perilaku</h4>
+                    <p>Seberapa yakin Anda merasakan gejala-gejala berikut?</p>
                   </div>
 
                   <div class="question-card">
-                    <p>21. Menghindari situasi sosial.</p>
+                    <p>21. [G21] Menghindari situasi sosial.</p>
                     <div class="scale">
-                      <label><input type="radio" name="q21" value="0" checked /> Tidak</label>
-                      <label><input type="radio" name="q21" value="1" /> Sangat Tidak Yakin</label>
-                      <label><input type="radio" name="q21" value="2" /> Tidak Yakin</label>
-                      <label><input type="radio" name="q21" value="3" /> Yakin</label>
-                      <label><input type="radio" name="q21" value="4" /> Sangat Yakin</label>
-                      <label><input type="radio" name="q21" value="5" /> Pasti</label>
+                      <label><input type="radio" name="q21" value="0" checked /> Tidak (0)</label>
+                      <label><input type="radio" name="q21" value="1" /> Sangat Tidak Yakin (0.2)</label>
+                      <label><input type="radio" name="q21" value="2" /> Tidak Yakin (0.4)</label>
+                      <label><input type="radio" name="q21" value="3" /> Yakin (0.6)</label>
+                      <label><input type="radio" name="q21" value="4" /> Sangat Yakin (0.8)</label>
+                      <label><input type="radio" name="q21" value="5" /> Pasti (1.0)</label>
                     </div>
                   </div>
 
                   <div class="question-card">
-                    <p>22. Menghindari objek atau situasi tertentu.</p>
+                    <p>22. [G22] Menghindari objek atau situasi tertentu.</p>
                     <div class="scale">
-                      <label><input type="radio" name="q22" value="0" checked /> Tidak</label>
-                      <label><input type="radio" name="q22" value="1" /> Sangat Tidak Yakin</label>
-                      <label><input type="radio" name="q22" value="2" /> Tidak Yakin</label>
-                      <label><input type="radio" name="q22" value="3" /> Yakin</label>
-                      <label><input type="radio" name="q22" value="4" /> Sangat Yakin</label>
-                      <label><input type="radio" name="q22" value="5" /> Pasti</label>
+                      <label><input type="radio" name="q22" value="0" checked /> Tidak (0)</label>
+                      <label><input type="radio" name="q22" value="1" /> Sangat Tidak Yakin (0.2)</label>
+                      <label><input type="radio" name="q22" value="2" /> Tidak Yakin (0.4)</label>
+                      <label><input type="radio" name="q22" value="3" /> Yakin (0.6)</label>
+                      <label><input type="radio" name="q22" value="4" /> Sangat Yakin (0.8)</label>
+                      <label><input type="radio" name="q22" value="5" /> Pasti (1.0)</label>
                     </div>
                   </div>
 
                   <div class="question-card">
-                    <p>23. Sulit berpisah dengan orang tua atau orang terdekat.</p>
+                    <p>23. [G23] Sulit berpisah dengan orang tua atau orang terdekat.</p>
                     <div class="scale">
-                      <label><input type="radio" name="q23" value="0" checked /> Tidak</label>
-                      <label><input type="radio" name="q23" value="1" /> Sangat Tidak Yakin</label>
-                      <label><input type="radio" name="q23" value="2" /> Tidak Yakin</label>
-                      <label><input type="radio" name="q23" value="3" /> Yakin</label>
-                      <label><input type="radio" name="q23" value="4" /> Sangat Yakin</label>
-                      <label><input type="radio" name="q23" value="5" /> Pasti</label>
+                      <label><input type="radio" name="q23" value="0" checked /> Tidak (0)</label>
+                      <label><input type="radio" name="q23" value="1" /> Sangat Tidak Yakin (0.2)</label>
+                      <label><input type="radio" name="q23" value="2" /> Tidak Yakin (0.4)</label>
+                      <label><input type="radio" name="q23" value="3" /> Yakin (0.6)</label>
+                      <label><input type="radio" name="q23" value="4" /> Sangat Yakin (0.8)</label>
+                      <label><input type="radio" name="q23" value="5" /> Pasti (1.0)</label>
                     </div>
                   </div>
 
                   <div class="question-card">
-                    <p>24. Mencari jaminan atau kepastian berulang-ulang.</p>
+                    <p>24. [G24] Mencari jaminan atau kepastian berulang-ulang.</p>
                     <div class="scale">
-                      <label><input type="radio" name="q24" value="0" checked /> Tidak</label>
-                      <label><input type="radio" name="q24" value="1" /> Sangat Tidak Yakin</label>
-                      <label><input type="radio" name="q24" value="2" /> Tidak Yakin</label>
-                      <label><input type="radio" name="q24" value="3" /> Yakin</label>
-                      <label><input type="radio" name="q24" value="4" /> Sangat Yakin</label>
-                      <label><input type="radio" name="q24" value="5" /> Pasti</label>
+                      <label><input type="radio" name="q24" value="0" checked /> Tidak (0)</label>
+                      <label><input type="radio" name="q24" value="1" /> Sangat Tidak Yakin (0.2)</label>
+                      <label><input type="radio" name="q24" value="2" /> Tidak Yakin (0.4)</label>
+                      <label><input type="radio" name="q24" value="3" /> Yakin (0.6)</label>
+                      <label><input type="radio" name="q24" value="4" /> Sangat Yakin (0.8)</label>
+                      <label><input type="radio" name="q24" value="5" /> Pasti (1.0)</label>
                     </div>
                   </div>
 
                   <div class="question-card">
-                    <p>25. Penurunan prestasi akademik.</p>
+                    <p>25. [G25] Penurunan prestasi akademik.</p>
                     <div class="scale">
-                      <label><input type="radio" name="q25" value="0" checked /> Tidak</label>
-                      <label><input type="radio" name="q25" value="1" /> Sangat Tidak Yakin</label>
-                      <label><input type="radio" name="q25" value="2" /> Tidak Yakin</label>
-                      <label><input type="radio" name="q25" value="3" /> Yakin</label>
-                      <label><input type="radio" name="q25" value="4" /> Sangat Yakin</label>
-                      <label><input type="radio" name="q25" value="5" /> Pasti</label>
+                      <label><input type="radio" name="q25" value="0" checked /> Tidak (0)</label>
+                      <label><input type="radio" name="q25" value="1" /> Sangat Tidak Yakin (0.2)</label>
+                      <label><input type="radio" name="q25" value="2" /> Tidak Yakin (0.4)</label>
+                      <label><input type="radio" name="q25" value="3" /> Yakin (0.6)</label>
+                      <label><input type="radio" name="q25" value="4" /> Sangat Yakin (0.8)</label>
+                      <label><input type="radio" name="q25" value="5" /> Pasti (1.0)</label>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
 
+            <!-- TOMBOL NAVIGASI -->
             <div class="wizard-nav form-actions">
               <button type="button" id="prevStepBtn" class="btn btn-secondary">Kembali</button>
               <button type="button" id="nextStepBtn" class="btn btn-primary">Lanjut</button>
@@ -480,6 +487,7 @@
             </div>
           </form>
 
+          <!-- PANEL HASIL DIAGNOSA -->
           <div id="resultPanel" class="result-card">
             <div class="result-card-header">
               <h3>Hasil Diagnosa</h3>
@@ -499,20 +507,20 @@
         </div>
         <div class="rules-list">
           <article class="rule-card">
-            <h3>Generalized Anxiety Disorder</h3>
+            <h3>Generalized Anxiety Disorder (GAD)</h3>
             <p>Jika ada gejala kecemasan berlebihan, sulit fokus, dan khawatir yang intens, sistem memproses kemungkinan GAD.</p>
           </article>
           <article class="rule-card">
-            <h3>Social Anxiety</h3>
-            <p>Jika ada rasa takut dinilai negatif dan cemas saat berinteraksi sosial, sistem mendukung social anxiety.</p>
+            <h3>Social Anxiety Disorder</h3>
+            <p>Jika ada rasa takut dinilai negatif dan cemas saat berinteraksi sosial, sistem mendukung indikasi Social Anxiety.</p>
           </article>
           <article class="rule-card">
             <h3>Panic Disorder</h3>
-            <p>Jika gejala jantung berdebar, tegang, dan panik muncul berulang, sistem menguatkan indikasi panic disorder.</p>
+            <p>Jika gejala jantung berdebar, tegang, dan panik muncul berulang, sistem menguatkan indikasi Panic Disorder.</p>
           </article>
           <article class="rule-card">
             <h3>Adjustment Anxiety</h3>
-            <p>Jika gejala muncul akibat perubahan lingkungan, stres sekolah, atau konflik emosional, sistem menilai adjustment anxiety.</p>
+            <p>Jika gejala muncul akibat perubahan lingkungan, stres sekolah, atau konflik emosional, sistem menilai Adjustment Anxiety.</p>
           </article>
         </div>
       </section>
@@ -520,7 +528,7 @@
       <section id="statistics" class="section">
         <div class="section-heading">
           <p class="eyebrow">Statistik</p>
-          <h2>Ringkasan hasil diagnosa Anda</h2>
+          <h2>Ringkasan hasil diagnosa sistem</h2>
         </div>
         <div class="stats-grid">
           <div class="stat-card">
@@ -543,10 +551,6 @@
           <p class="eyebrow">Riwayat</p>
           <h2>Catatan diagnosa yang pernah Anda lakukan</h2>
         </div>
-        <div class="history-toolbar">
-          <button id="downloadAllBtn" type="button" class="btn btn-secondary">Unduh Semua Riwayat</button>
-          <button id="clearHistoryBtn" type="button" class="btn btn-secondary">Hapus Riwayat</button>
-        </div>
         <div id="historyList" class="history-list"></div>
       </section>
 
@@ -566,7 +570,7 @@
     </main>
 
     <footer class="footer">
-      <p>© 2026 Sistem Pakar Anxiety Remaja — Prototype web interaktif.</p>
+      <p>© 2026 Sistem Pakar Anxiety Remaja — Prototype Web Interaktif.</p>
     </footer>
 
     <script src="script.js"></script>

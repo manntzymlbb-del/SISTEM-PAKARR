@@ -1,3 +1,6 @@
+// PERBAIKAN 1: Port disesuaikan ke 8000 sesuai server yang berjalan
+const API_URL = 'http://localhost:8000/api.php';
+
 const questions = [
   { id: 'q1', text: 'Jantung berdetak cepat atau berdebar.', weights: { 'Generalized Anxiety Disorder': 0.05, 'Social Anxiety': 0.03, 'Panic Disorder': 0.09, 'Adjustment Anxiety': 0.04 } },
   { id: 'q2', text: 'Keringat berlebih.', weights: { 'Generalized Anxiety Disorder': 0.04, 'Social Anxiety': 0.03, 'Panic Disorder': 0.08, 'Adjustment Anxiety': 0.04 } },
@@ -81,8 +84,13 @@ function collectAnswers() {
 function updateProgress() {
   const answeredCount = questions.filter((question) => diagnosisForm.querySelector(`input[name="${question.id}"]:checked`) !== null).length;
   const percentage = Math.round((answeredCount / questions.length) * 100);
-  progressLabel.textContent = `Langkah ${currentStep + 1} dari ${wizardSteps.length} • ${answeredCount}/${questions.length} pertanyaan terjawab`;
-  progressBar.style.width = `${percentage}%`;
+  
+  if (progressLabel) {
+    progressLabel.textContent = `Langkah ${currentStep + 1} dari ${wizardSteps.length || 1} • ${answeredCount}/${questions.length} pertanyaan terjawab`;
+  }
+  if (progressBar) {
+    progressBar.style.width = `${percentage}%`;
+  }
 
   wizardSteps.forEach((step, index) => {
     step.classList.toggle('active', index === currentStep);
@@ -91,19 +99,21 @@ function updateProgress() {
     pill.classList.toggle('active', index === currentStep);
   });
 
-  prevStepBtn.disabled = currentStep === 0;
-  nextStepBtn.style.display = currentStep === wizardSteps.length - 1 ? 'none' : 'inline-block';
-  submitStepBtn.classList.toggle('active', currentStep === wizardSteps.length - 1);
+  if (prevStepBtn) prevStepBtn.disabled = currentStep === 0;
+  if (nextStepBtn) nextStepBtn.style.display = currentStep === wizardSteps.length - 1 ? 'none' : 'inline-block';
+  if (submitStepBtn) submitStepBtn.classList.toggle('active', currentStep === wizardSteps.length - 1);
 }
 
 function renderPlaceholder(message) {
-  resultContent.innerHTML = `<p class="result-placeholder">${message}</p>`;
-  resultBadge.textContent = 'Menunggu';
-  resultBadge.className = 'status-badge';
+  if (resultContent) resultContent.innerHTML = `<p class="result-placeholder">${message}</p>`;
+  if (resultBadge) {
+    resultBadge.textContent = 'Menunggu';
+    resultBadge.className = 'status-badge';
+  }
 }
 
 function goToStep(step) {
-  currentStep = Math.max(0, Math.min(step, wizardSteps.length - 1));
+  currentStep = Math.max(0, Math.min(step, (wizardSteps.length || 1) - 1));
   updateProgress();
   const formCard = document.querySelector('.diagnosis-card');
   if (formCard) {
@@ -112,11 +122,12 @@ function goToStep(step) {
 }
 
 function resetConsultation() {
-  diagnosisForm.reset();
+  if (diagnosisForm) diagnosisForm.reset();
   document.querySelectorAll('input[type="radio"]').forEach((input) => {
     input.checked = false;
   });
-  document.getElementById('patientGender').value = '';
+  const genderInput = document.getElementById('patientGender');
+  if (genderInput) genderInput.value = '';
   goToStep(0);
   renderPlaceholder('Belum ada hasil. Jawab semua pertanyaan dan klik tombol proses diagnosa.');
   currentResult = null;
@@ -202,26 +213,7 @@ function loadHistory() {
       return [];
     }
   }
-
-  const legacy = localStorage.getItem('anxietyHistory');
-  if (!legacy) return [];
-
-  try {
-    return JSON.parse(legacy).map((item) => ({
-      id: item.id || `${Date.now()}-${Math.random()}`,
-      patientName: item.patientName || 'Pasien',
-      patientAge: item.patientAge || '—',
-      disease: item.disease,
-      score: item.score,
-      level: item.level || '—',
-      time: item.time,
-      timestamp: item.timestamp || new Date().toISOString(),
-      answers: item.answers || {},
-      recommendations: item.recommendations || []
-    }));
-  } catch (error) {
-    return [];
-  }
+  return [];
 }
 
 function saveHistory(result) {
@@ -229,7 +221,6 @@ function saveHistory(result) {
   history.unshift(result);
   const limited = history.slice(0, 8);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(limited));
-  localStorage.removeItem('anxietyHistory');
 }
 
 function getRiskLevel(score) {
@@ -239,6 +230,7 @@ function getRiskLevel(score) {
 }
 
 function downloadResult(result) {
+  if (!result) return;
   const payload = {
     ...result,
     exportedAt: new Date().toISOString()
@@ -252,23 +244,12 @@ function downloadResult(result) {
   URL.revokeObjectURL(url);
 }
 
-function downloadAllHistory() {
-  const history = loadHistory();
-  const blob = new Blob([JSON.stringify(history, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = 'riwayat-diagnosa-anxiety.json';
-  link.click();
-  URL.revokeObjectURL(url);
-}
-
 function updateStatistics() {
   const history = loadHistory();
   if (!history.length) {
-    totalDiagnoses.textContent = '0';
-    mostCommonDisease.textContent = '-';
-    avgScore.textContent = '0%';
+    if (totalDiagnoses) totalDiagnoses.textContent = '0';
+    if (mostCommonDisease) mostCommonDisease.textContent = '-';
+    if (avgScore) avgScore.textContent = '0%';
     return;
   }
 
@@ -279,13 +260,14 @@ function updateStatistics() {
   }, {});
   const topDisease = Object.entries(diseaseCount).sort((a, b) => b[1] - a[1])[0]?.[0] || '-';
 
-  totalDiagnoses.textContent = String(history.length);
-  mostCommonDisease.textContent = topDisease;
-  avgScore.textContent = `${Math.round(scores.reduce((a, b) => a + b, 0) / scores.length)}%`;
+  if (totalDiagnoses) totalDiagnoses.textContent = String(history.length);
+  if (mostCommonDisease) mostCommonDisease.textContent = topDisease;
+  if (avgScore) avgScore.textContent = `${Math.round(scores.reduce((a, b) => a + b, 0) / scores.length)}%`;
 }
 
 function renderHistory() {
   const history = loadHistory();
+  if (!historyList) return;
 
   if (!history.length) {
     historyList.innerHTML = '<div class="history-item">Belum ada riwayat diagnosa. Lakukan diagnosa pertama Anda untuk melihat catatan di sini.</div>';
@@ -311,27 +293,72 @@ function renderHistory() {
   updateStatistics();
 }
 
-function renderResult(answers) {
-  const { matchedRules, scoreMap } = runInference(answers);
-  const hasAnswer = questions.some((question) => diagnosisForm.querySelector(`input[name="${question.id}"]:checked`) !== null);
-  const patientName = document.getElementById('patientName').value.trim();
-  const patientAge = document.getElementById('patientAge').value;
+// =============================================================
+// FUNGSI SIMPAN KE DATABASE (Terkoneksi ke api.php Backend PHP)
+// =============================================================
+async function saveDiagnosisToDatabase(result) {
+  try {
+    // PERBAIKAN 2: Mengamankan format data agar diproses lancar oleh PHP
+    const payload = {
+      patientName: result.patientName,
+      patientAge: String(result.patientAge),
+      patientGender: result.patientGender,
+      disease: result.disease,
+      score: Number(result.score),
+      levelName: result.level,
+      answers: result.answers,
+      recommendations: result.recommendations,
+      evidence: result.evidence
+    };
 
-  if (!hasAnswer) {
-    renderPlaceholder('Jawab semua pertanyaan terlebih dahulu untuk melihat hasil diagnosa.');
-    return;
+    const response = await fetch(API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP Error Status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    if (data.success) {
+      console.log('✅ Simpan DB Berhasil:', data.message);
+    } else {
+      console.error('❌ DB Error:', data.message);
+      alert(`Gagal menyimpan ke database: ${data.message}`);
+    }
+  } catch (error) {
+    console.error('❌ Connection Error:', error);
+    alert('Koneksi ke backend (api.php) gagal. Pastikan server Apache/XAMPP berjalan.');
   }
+}
 
+function renderResult(answers) {
+  const patientNameEl = document.getElementById('patientName');
+  const patientAgeEl = document.getElementById('patientAge');
+  const patientGenderEl = document.getElementById('patientGender');
+
+  const patientName = patientNameEl ? patientNameEl.value.trim() : '';
+  const patientAge = patientAgeEl ? patientAgeEl.value.trim() : '';
+  const patientGender = patientGenderEl ? patientGenderEl.value || '—' : '—';
+
+  const { matchedRules, scoreMap } = runInference(answers);
   const diseaseEntries = Object.entries(scoreMap).sort((a, b) => b[1] - a[1]);
   const [topDisease, topScore] = diseaseEntries[0];
   const percentage = Math.round(topScore * 100);
-  const patientGender = document.getElementById('patientGender').value || '—';
+
   const answerSummary = questions
     .filter((question) => Number(answers[question.id] || 0) > 0)
     .map((question) => `<li>${question.text}</li>`)
-    .join('');
-  const explanationList = matchedRules.map((rule) => `<li>${rule.explanation}</li>`).join('');
-  const recommendationList = getRecommendation(topDisease).map((item) => `<li class="result-recommendation">${item}</li>`).join('');
+    .join('') || '<li>Tidak ada gejala yang dipilih (Semua dijawab Tidak).</li>';
+
+  const explanationList = matchedRules.map((rule) => `<li>${rule.explanation}</li>`).join('') || '<li>Tidak ada kecocokan rule utama secara eksplisit.</li>';
+  const recommendations = getRecommendation(topDisease);
+  const recommendationList = recommendations.map((item) => `<li class="result-recommendation">${item}</li>`).join('');
+
   const summaryText = percentage >= 80
     ? `Berdasarkan gejala yang Anda pilih, sistem menilai bahwa ${topDisease} memiliki indikasi yang kuat dan perlu diperhatikan lebih lanjut.`
     : percentage >= 50
@@ -349,12 +376,15 @@ function renderResult(answers) {
     time: new Date().toLocaleString('id-ID'),
     timestamp: new Date().toISOString(),
     answers,
-    recommendations: getRecommendation(topDisease),
+    recommendations,
     evidence: matchedRules.map((rule) => rule.explanation)
   };
 
   currentResult = result;
+  
+  // Simpan ke Local Storage & Database PHP
   saveHistory(result);
+  saveDiagnosisToDatabase(result);
   renderHistory();
 
   let badgeClass = 'status-badge';
@@ -362,112 +392,148 @@ function renderResult(answers) {
   else if (result.level === 'Sedang') badgeClass = 'status-badge status-badge-warning';
   else badgeClass = 'status-badge status-badge-success';
 
-  resultBadge.className = badgeClass;
-  resultBadge.textContent = result.level;
+  if (resultBadge) {
+    resultBadge.className = badgeClass;
+    resultBadge.textContent = result.level;
+  }
 
-  resultContent.innerHTML = `
-    <div class="result-summary">
-      <div class="result-highlight">
-        <div>
-          <p class="result-title">${result.patientName}</p>
-          <p class="result-subtitle">${result.patientAge} tahun • ${result.patientGender}</p>
+  if (resultContent) {
+    resultContent.innerHTML = `
+      <div class="result-summary">
+        <div class="result-highlight">
+          <div>
+            <p class="result-title">${result.patientName}</p>
+            <p class="result-subtitle">${result.patientAge} tahun • ${result.patientGender}</p>
+          </div>
+          <span class="status-badge ${badgeClass.replace('status-badge ', '')}">${result.level}</span>
         </div>
-        <span class="status-badge ${badgeClass.replace('status-badge ', '')}">${result.level}</span>
-      </div>
-      <div class="result-metrics">
-        <div class="metric-pill">
-          <span>Jenis kemungkinan</span>
-          <strong>${topDisease}</strong>
-        </div>
-        <div class="metric-pill">
-          <span>Keyakinan sistem</span>
-          <strong>${percentage}%</strong>
-        </div>
-        <div class="metric-pill">
-          <span>Level risiko</span>
-          <strong>${result.level}</strong>
-        </div>
-      </div>
-    </div>
-
-    <div class="result-section">
-      <h4>Ringkasan hasil</h4>
-      <p>${summaryText}</p>
-      <div class="result-meter">
-        <strong>Tingkat kepercayaan hasil</strong>
-        <div class="result-meter-bar">
-          <div class="result-meter-fill" style="width: ${Math.min(percentage, 100)}%"></div>
+        <div class="result-metrics">
+          <div class="metric-pill">
+            <span>Jenis kemungkinan</span>
+            <strong>${topDisease}</strong>
+          </div>
+          <div class="metric-pill">
+            <span>Keyakinan sistem</span>
+            <strong>${percentage}%</strong>
+          </div>
+          <div class="metric-pill">
+            <span>Level risiko</span>
+            <strong>${result.level}</strong>
+          </div>
         </div>
       </div>
-    </div>
 
-    <div class="result-section">
-      <h4>Respon yang Anda pilih</h4>
-      <ul class="result-list">${answerSummary}</ul>
-    </div>
+      <div class="result-section">
+        <h4>Ringkasan hasil</h4>
+        <p>${summaryText}</p>
+        <div class="result-meter">
+          <strong>Tingkat kepercayaan hasil</strong>
+          <div class="result-meter-bar">
+            <div class="result-meter-fill" style="width: ${Math.min(percentage, 100)}%"></div>
+          </div>
+        </div>
+      </div>
 
-    <div class="result-section">
-      <h4>Alur forward chaining</h4>
-      <ul class="result-list">${explanationList}</ul>
-    </div>
+      <div class="result-section">
+        <h4>Gejala yang dialami (Pilihan 'Ya')</h4>
+        <ul class="result-list">${answerSummary}</ul>
+      </div>
 
-    <div class="result-section">
-      <h4>Rekomendasi awal</h4>
-      <ul class="recommendation-list">${recommendationList}</ul>
-    </div>
+      <div class="result-section">
+        <h4>Alur Penalaran System (Forward Chaining)</h4>
+        <ul class="result-list">${explanationList}</ul>
+      </div>
 
-    <div class="result-actions">
-      <button type="button" id="downloadResultBtn" class="btn btn-secondary">Unduh Hasil</button>
-    </div>
-  `;
+      <div class="result-section">
+        <h4>Rekomendasi awal</h4>
+        <ul class="recommendation-list">${recommendationList}</ul>
+      </div>
 
-  const downloadButton = document.getElementById('downloadResultBtn');
-  if (downloadButton) {
-    downloadButton.addEventListener('click', () => downloadResult(currentResult));
+      <div class="result-actions">
+        <button type="button" id="downloadResultBtn" class="btn btn-secondary">Unduh Hasil</button>
+      </div>
+    `;
+
+    const downloadButton = document.getElementById('downloadResultBtn');
+    if (downloadButton) {
+      downloadButton.addEventListener('click', () => downloadResult(currentResult));
+    }
   }
 }
 
-diagnosisForm.addEventListener('submit', (event) => {
-  event.preventDefault();
-  const answers = collectAnswers();
-  renderResult(answers);
-});
+// Event Listeners
+if (diagnosisForm) {
+  diagnosisForm.addEventListener('submit', (event) => {
+    event.preventDefault();
+    const answers = collectAnswers();
+    renderResult(answers);
+  });
 
-diagnosisForm.addEventListener('change', updateProgress);
-diagnosisForm.addEventListener('input', updateProgress);
-prevStepBtn.addEventListener('click', () => goToStep(currentStep - 1));
-nextStepBtn.addEventListener('click', () => {
-  const patientName = document.getElementById('patientName').value.trim();
-  const patientAge = document.getElementById('patientAge').value.trim();
+  diagnosisForm.addEventListener('change', updateProgress);
+  diagnosisForm.addEventListener('input', updateProgress);
+}
 
-  if (currentStep === 0 && (!patientName || !patientAge)) {
-    alert('Isi nama dan usia sebelum melanjutkan konsultasi.');
-    return;
-  }
+if (prevStepBtn) {
+  prevStepBtn.addEventListener('click', () => goToStep(currentStep - 1));
+}
 
-  goToStep(currentStep + 1);
-});
-resetFormBtn.addEventListener('click', resetConsultation);
+if (nextStepBtn) {
+  nextStepBtn.addEventListener('click', () => {
+    const patientNameEl = document.getElementById('patientName');
+    const patientAgeEl = document.getElementById('patientAge');
 
-contactForm.addEventListener('submit', (event) => {
-  event.preventDefault();
-  contactMessage.textContent = 'Terima kasih, pesan Anda telah diterima. Kami akan segera merespons.';
-  contactForm.reset();
-});
+    if (currentStep === 0 && patientNameEl && patientAgeEl) {
+      if (!patientNameEl.value.trim() || !patientAgeEl.value.trim()) {
+        alert('Isi nama dan usia sebelum melanjutkan konsultasi.');
+        return;
+      }
+    }
+    goToStep(currentStep + 1);
+  });
+}
 
-historyList.addEventListener('click', (event) => {
-  const button = event.target.closest('[data-download-id]');
-  if (!button) return;
-  const item = loadHistory().find((entry) => entry.id === button.getAttribute('data-download-id'));
-  if (item) downloadResult(item);
-});
+if (resetFormBtn) {
+  resetFormBtn.addEventListener('click', resetConsultation);
+}
 
-downloadAllBtn.addEventListener('click', downloadAllHistory);
-clearHistoryBtn.addEventListener('click', () => {
-  localStorage.removeItem(STORAGE_KEY);
-  renderHistory();
-});
+if (contactForm) {
+  contactForm.addEventListener('submit', (event) => {
+    event.preventDefault();
+    if (contactMessage) contactMessage.textContent = 'Terima kasih, pesan Anda telah diterima. Kami akan segera merespons.';
+    contactForm.reset();
+  });
+}
 
+if (historyList) {
+  historyList.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-download-id]');
+    if (!button) return;
+    const item = loadHistory().find((entry) => entry.id === button.getAttribute('data-download-id'));
+    if (item) downloadResult(item);
+  });
+}
+
+if (downloadAllBtn) {
+  downloadAllBtn.addEventListener('click', () => {
+    const history = loadHistory();
+    const blob = new Blob([JSON.stringify(history, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'riwayat-diagnosa-anxiety.json';
+    link.click();
+    URL.revokeObjectURL(url);
+  });
+}
+
+if (clearHistoryBtn) {
+  clearHistoryBtn.addEventListener('click', () => {
+    localStorage.removeItem(STORAGE_KEY);
+    renderHistory();
+  });
+}
+
+// Inisialisasi awal
 updateProgress();
 renderPlaceholder('Belum ada hasil. Jawab semua pertanyaan dan klik tombol proses diagnosa.');
 renderHistory();

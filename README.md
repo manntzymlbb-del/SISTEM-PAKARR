@@ -4,13 +4,19 @@ Situs ini adalah aplikasi web statis untuk mendeteksi dini tingkat anxiety pada 
 
 ## Cara menjalankan lokal
 
-Buka file index.html langsung di browser, atau jalankan server lokal sederhana:
+Jika Anda menggunakan XAMPP, letakkan folder proyek di `C:\xampp\htdocs\anxiety-expert-system` dan pastikan Apache serta MySQL aktif. Selanjutnya buka:
+
+- http://127.0.0.1/anxiety-expert-system/
+- http://127.0.0.1/anxiety-expert-system/view_diagnoses.php untuk melihat data tersimpan
+- http://127.0.0.1/anxiety-expert-system/db_status.php untuk memeriksa koneksi database
+
+Jika Anda ingin menggunakan server PHP lokal tanpa XAMPP, jalankan dari folder proyek:
 
 ```bash
-python -m http.server 8000
+C:\xampp\php\php.exe -S 127.0.0.1:8000
 ```
 
-Lalu buka http://localhost:8000
+Kemudian buka http://127.0.0.1:8000
 
 ## Publikasi online
 

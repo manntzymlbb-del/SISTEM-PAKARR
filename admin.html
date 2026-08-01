@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Admin - Sistem Pakar</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .admin-container { max-width: 1000px; margin: 30px auto; padding: 20px; font-family: sans-serif; }
+    .section-box { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 25px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+    table, th, td { border: 1px solid #ddd; }
+    th, td { padding: 10px; text-align: left; }
+    th { background-color: #f4f4f4; }
+    .btn { padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; }
+    .btn-primary { background: #007bff; color: white; }
+    .btn-danger { background: #dc3545; color: white; }
+    .btn-warning { background: #ffc107; color: #000; }
+    .btn-success { background: #28a745; color: white; }
+    .form-group { margin-bottom: 10px; }
+    .form-group label { display: block; margin-bottom: 5px; }
+    .form-group input, .form-group textarea { width: 100%; padding: 8px; box-sizing: border-box; }
+  </style>
+  <!-- Library html2pdf untuk ekspor ke PDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.min.js" integrity="sha512-GsLlTy/UrU1vBy5f4ZPFTT3T5Uxp7W882gneYA48mKU8w5fEMB8EA4UfAcw8eECU6gK0aH9y1dE2p3zK/v3P8g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+</head>
+<body>
+
+  <div class="admin-container">
+    <h2>Dashboard Admin - Kelola Sistem Pakar</h2>
+
+    <!-- SECTION 1: KELOLA GEJALA -->
+    <div class="section-box">
+      <h3>Kelola Data Gejala</h3>
+      
+      <form id="symptomForm">
+        <input type="hidden" id="symptomId">
+        <div class="form-group">
+          <label>Kode Gejala (misal: G01):</label>
+          <input type="text" id="symptomCode" required>
+        </div>
+        <div class="form-group">
+          <label>Deskripsi Gejala:</label>
+          <textarea id="symptomDesc" rows="2" required></textarea>
+        </div>
+        <div class="form-group">
+          <label>Bobot (0 - 1.0):</label>
+          <input type="number" step="0.1" id="symptomWeight" required>
+        </div>
+        <button type="submit" id="saveSymptomBtn" class="btn btn-primary">Tambah Gejala</button>
+        <button type="button" id="cancelEditBtn" class="btn btn-warning" style="display:none;">Batal Edit</button>
+      </form>
+
+      <hr style="margin: 20px 0;">
+
+      <table>
+        <thead>
+          <tr>
+            <th>Kode</th>
+            <th>Deskripsi Gejala</th>
+            <th>Bobot</th>
+            <th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="symptomsTableBody">
+          <!-- Item gejala dari JS -->
+        </tbody>
+      </table>
+    </div>
+
+    <!-- SECTION 2: RIWAYAT DIAGNOSA & PDF -->
+    <div class="section-box">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h3>Riwayat Diagnosa Pasien</h3>
+        <button id="downloadPdfBtn" class="btn btn-success">Download PDF Riwayat</button>
+      </div>
+
+      <div id="pdfExportArea">
+        <h3 style="display:none;" id="pdfTitle">Laporan Riwayat Diagnosa Pasien</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Nama Pasien</th>
+              <th>Usia / Gender</th>
+              <th>Diagnosa</th>
+              <th>Tingkat (Skor)</th>
+              <th>Tanggal</th>
+              <th class="no-print">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="historyTableBody">
+            <!-- Item riwayat dari JS -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script src="admin.js"></script>
+</body>
+</html>
